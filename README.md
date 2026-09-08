@@ -34,3 +34,31 @@ This initial setup provides:
 
 The next implementation step is the domain model for maids, services,
 availability windows, and bookings.
+
+## Maid onboarding API
+
+The first module currently provides:
+
+- `POST /api/maids` to register an active maid.
+- `GET /api/maids/{maidId}` to retrieve a maid profile.
+- `POST /api/maids/{maidId}/availability` to add a weekly availability window.
+- `GET /api/maids/{maidId}/availability?day=MONDAY&start=10:00&end=12:00` to check availability.
+
+Example registration request:
+
+```json
+{
+  "name": "Asha",
+  "locality": "Indiranagar",
+  "services": ["CLEANING", "DISHWASHING"],
+  "price": 500,
+  "currency": "INR",
+  "availability": [
+    { "dayOfWeek": "MONDAY", "startTime": "09:00", "endTime": "13:00" }
+  ]
+}
+```
+
+Availability is modelled as recurring weekly windows. Booking-specific occupied
+slots will be layered on top of this in the booking module. Persistence is
+currently in memory behind [`MaidRepository`](src/main/java/com/rupeek/maidbooking/maid/domain/MaidRepository.java).
