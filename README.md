@@ -50,9 +50,10 @@ Example registration request:
 {
   "name": "Asha",
   "locality": "Indiranagar",
-  "services": ["CLEANING", "DISHWASHING"],
-  "price": 500,
-  "currency": "INR",
+  "services": [
+    { "type": "CLEANING", "price": 400, "currency": "INR" },
+    { "type": "DISHWASHING", "price": 300, "currency": "INR" }
+  ],
   "availability": [
     { "dayOfWeek": "MONDAY", "startTime": "09:00", "endTime": "13:00" }
   ]
@@ -62,3 +63,8 @@ Example registration request:
 Availability is modelled as recurring weekly windows. Booking-specific occupied
 slots will be layered on top of this in the booking module. Persistence is
 currently in memory behind [`MaidRepository`](src/main/java/com/rupeek/maidbooking/maid/domain/MaidRepository.java).
+
+Each maid has one price per offered service. When a customer selects multiple
+services, their prices are added together; for example, cleaning at ₹400 plus
+dishwashing at ₹300 produces a booking subtotal of ₹700. All offerings for one
+maid must currently use the same currency.

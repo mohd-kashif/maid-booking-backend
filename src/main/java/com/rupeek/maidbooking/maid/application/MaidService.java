@@ -5,6 +5,7 @@ import com.rupeek.maidbooking.maid.domain.Maid;
 import com.rupeek.maidbooking.maid.domain.MaidId;
 import com.rupeek.maidbooking.maid.domain.MaidRepository;
 import com.rupeek.maidbooking.maid.domain.Price;
+import com.rupeek.maidbooking.maid.domain.ServiceOffering;
 import com.rupeek.maidbooking.maid.domain.ServiceType;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +23,9 @@ public class MaidService {
         this.repository = repository;
     }
 
-    public Maid register(String name, String locality, EnumSet<ServiceType> services,
-                         Price price,
+    public Maid register(String name, String locality, List<ServiceOffering> serviceOfferings,
                          List<AvailabilityWindow> availabilityWindows) {
-        return repository.save(Maid.register(name, locality, services, price, availabilityWindows));
+        return repository.save(Maid.register(name, locality, serviceOfferings, availabilityWindows));
     }
 
     public Maid get(UUID maidId) {
