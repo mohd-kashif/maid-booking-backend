@@ -4,14 +4,11 @@ import com.rupeek.maidbooking.maid.domain.AvailabilityWindow;
 import com.rupeek.maidbooking.maid.domain.Maid;
 import com.rupeek.maidbooking.maid.domain.MaidId;
 import com.rupeek.maidbooking.maid.domain.MaidRepository;
-import com.rupeek.maidbooking.maid.domain.Price;
 import com.rupeek.maidbooking.maid.domain.ServiceOffering;
-import com.rupeek.maidbooking.maid.domain.ServiceType;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 

@@ -11,7 +11,6 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MaidTest {
-    private static final Price PRICE = new Price(BigDecimal.valueOf(500), "INR");
 
     @Test
     void registersMaidWithValidDetails() {

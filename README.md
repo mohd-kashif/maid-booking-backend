@@ -68,3 +68,30 @@ Each maid has one price per offered service. When a customer selects multiple
 services, their prices are added together; for example, cleaning at ₹400 plus
 dishwashing at ₹300 produces a booking subtotal of ₹700. All offerings for one
 maid must currently use the same currency.
+
+## Booking API
+
+The booking module supports strategy-based instant, scheduled, and recurring
+bookings:
+
+- `POST /api/bookings` creates a booking.
+- `GET /api/bookings/{bookingId}` retrieves a booking.
+- `POST /api/bookings/{bookingId}/cancel` cancels a booking and releases its slots.
+
+Example scheduled booking:
+
+```json
+{
+  "customerId": "customer-1",
+  "maidId": "maid-uuid",
+  "type": "SCHEDULED",
+  "services": ["CLEANING", "COOKING"],
+  "start": "2026-09-15T10:00:00Z",
+  "end": "2026-09-15T12:00:00Z"
+}
+```
+
+Booking creation resolves a [`BookingStrategy`](src/main/java/com/rupeek/maidbooking/booking/application/BookingStrategy.java)
+from a registry, so adding a new booking type does not require branching changes
+inside the application service. The in-memory repository performs synchronized
+slot reservation to prevent overlapping active bookings for the same maid.
