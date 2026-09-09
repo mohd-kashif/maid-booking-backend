@@ -15,7 +15,7 @@ public class InMemoryBookingRepository implements BookingRepository {
     public synchronized Booking reserveAndSave(Booking booking) {
         boolean overlaps = bookings.values().stream()
                 .filter(existing -> existing.maidId().equals(booking.maidId()) && existing.isActive())
-                .anyMatch(existing -> existing.slots().stream()
+                .anyMatch(existing -> existing.activeSlots().stream()
                         .anyMatch(existingSlot -> booking.slots().stream().anyMatch(existingSlot::overlaps)));
         if (overlaps) {
             throw new IllegalStateException("Maid is already booked for one or more requested slots");

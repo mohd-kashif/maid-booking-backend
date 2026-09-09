@@ -56,6 +56,13 @@ public final class Payment {
         this.status = PaymentStatus.FAILED;
     }
 
+    public void refund() {
+        if (status != PaymentStatus.SUCCESS) {
+            throw new IllegalStateException("Only successful payments can be refunded");
+        }
+        status = PaymentStatus.REFUNDED;
+    }
+
     public PaymentId id() { return id; }
     public UUID paymentId() { return id.value(); }
     public UUID bookingId() { return bookingId; }

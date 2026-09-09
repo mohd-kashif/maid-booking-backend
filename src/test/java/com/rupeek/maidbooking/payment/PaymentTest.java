@@ -63,10 +63,11 @@ class PaymentTest {
     }
 
     private static PaymentService service(BookingService bookingService) {
-        var gateway = new MockPaymentGateway();
+        var gateway = new MockPaymentProvider();
         var registry = new PaymentMethodRegistry(List.of(
                 new CardPaymentStrategy(gateway), new UpiPaymentStrategy(gateway), new WalletPaymentStrategy(gateway)));
-        return new PaymentService(bookingService, new InMemoryPaymentRepository(), registry);
+        return new PaymentService(bookingService, new InMemoryPaymentRepository(), registry,
+                gateway);
     }
 
     private static Booking booking() {

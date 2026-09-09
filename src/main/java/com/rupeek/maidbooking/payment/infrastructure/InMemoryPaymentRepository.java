@@ -31,4 +31,12 @@ public class InMemoryPaymentRepository implements PaymentRepository {
     public Optional<Payment> findByIdempotencyKey(String idempotencyKey) {
         return Optional.ofNullable(byIdempotencyKey.get(idempotencyKey));
     }
+
+    @Override
+    public Optional<Payment> findByBookingAndOccurrence(java.util.UUID bookingId, Integer occurrenceIndex) {
+        return payments.values().stream()
+                .filter(payment -> payment.bookingId().equals(bookingId)
+                        && java.util.Objects.equals(payment.occurrenceIndex(), occurrenceIndex))
+                .findFirst();
+    }
 }

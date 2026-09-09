@@ -33,4 +33,10 @@ public class ApiExceptionHandler {
     Map<String, String> badRequest(IllegalArgumentException exception) {
         return Map.of("error", exception.getMessage());
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    Map<String, String> conflict(IllegalStateException exception) {
+        return Map.of("error", exception.getMessage());
+    }
 }

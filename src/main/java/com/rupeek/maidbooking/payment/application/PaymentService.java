@@ -3,6 +3,7 @@ package com.rupeek.maidbooking.payment.application;
 import com.rupeek.maidbooking.booking.application.BookingService;
 import com.rupeek.maidbooking.booking.domain.Booking;
 import com.rupeek.maidbooking.payment.domain.*;
+import com.rupeek.maidbooking.payment.infrastructure.RefundGateway;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -12,12 +13,14 @@ public class PaymentService {
     private final BookingService bookingService;
     private final PaymentRepository paymentRepository;
     private final PaymentMethodRegistry methodRegistry;
+    private final RefundGateway refundGateway;
 
     public PaymentService(BookingService bookingService, PaymentRepository paymentRepository,
-                          PaymentMethodRegistry methodRegistry) {
+                          PaymentMethodRegistry methodRegistry, RefundGateway refundGateway) {
         this.bookingService = bookingService;
         this.paymentRepository = paymentRepository;
         this.methodRegistry = methodRegistry;
+        this.refundGateway = refundGateway;
     }
 
     public synchronized Payment makePayment(MakePaymentCommand command) {
@@ -47,6 +50,23 @@ public class PaymentService {
     public Payment get(UUID paymentId) {
         return paymentRepository.findById(new PaymentId(paymentId))
                 .orElseThrow(() -> new PaymentNotFoundException(paymentId));
+    }
+
+    public Payment refund(UUID bookingId, Integer occurrenceIndex) {
+        Payment payment = paymentRepository.findByBookingAndOccurrence(bookingId, occurrenceIndex)
+                .orElseThrow(() -> new IllegalStateException("No payment found for cancellation scope"));
+        var result = refundGateway.refund(payment.transactionReference(), payment.amountSnapshot());
+        if (!result.successful()) {
+            throw new IllegalStateException("Refund failed: " + result.failureReason());
+        }
+        payment.refund();
+        return payment;
+    }
+
+    public Payment refundIfPresent(UUID bookingId, Integer occurrenceIndex) {
+        return paymentRepository.findByBookingAndOccurrence(bookingId, occurrenceIndex)
+                .map(payment -> refund(bookingId, occurrenceIndex))
+                .orElse(null);
     }
 
     public static class PaymentNotFoundException extends RuntimeException {

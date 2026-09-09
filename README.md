@@ -117,6 +117,41 @@ Example request:
 
 Payment amount is copied from the booking price snapshot. Reusing the same
 idempotency key returns the original payment and does not charge the gateway
-again. The current gateway is a deterministic mock; sending `fail` as payment
+again. [`MockPaymentProvider`](src/main/java/com/rupeek/maidbooking/payment/infrastructure/MockPaymentProvider.java)
+implements both charge and refund capabilities, ensuring refunds use the same
+provider abstraction as the original payment. Sending `fail` as payment
 details simulates a gateway failure for local testing. Recurring bookings may
 provide a zero-based `occurrenceIndex` to pay each occurrence independently.
+
+## Cancellation and refund API
+
+Bookings can be cancelled through the cancellation endpoint:
+
+- `POST /api/bookings/{bookingId}/cancellations`
+
+Cancel an entire booking:
+
+```json
+{
+  "scope": "ENTIRE_BOOKING",
+  "reason": "CUSTOMER_REQUEST",
+  "policyType": "STANDARD"
+}
+```
+
+Cancel one occurrence of a recurring booking:
+
+```json
+{
+  "scope": "SINGLE_OCCURRENCE",
+  "occurrenceIndex": 0,
+  "reason": "CUSTOMER_REQUEST",
+  "policyType": "STANDARD"
+}
+```
+
+The current policy provides a full refund when cancellation happens more than
+24 hours before the slot. Cancellations within 24 hours do not receive a
+refund. The policy is behind [`CancellationPolicy`](src/main/java/com/rupeek/maidbooking/cancellation/application/CancellationPolicy.java)
+and selected through [`CancellationPolicyRegistry`](src/main/java/com/rupeek/maidbooking/cancellation/application/CancellationPolicyRegistry.java)
+so new policy implementations can be added without changing cancellation orchestration.
