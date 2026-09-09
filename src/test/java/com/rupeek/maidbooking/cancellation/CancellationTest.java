@@ -91,6 +91,42 @@ class CancellationTest {
     }
 
     @Test
+    void rejectsDoubleCancellationBeforeAttemptingRefund() {
+        Booking booking = scheduledBooking();
+        BookingService bookingService = mock(BookingService.class);
+        when(bookingService.get(booking.bookingId())).thenReturn(booking);
+        CancellationService service = new CancellationService(bookingService, mock(PaymentService.class),
+                new CancellationPolicyRegistry(List.of(new SimpleCancellationPolicy())),
+                new InMemoryCancellationRepository());
+        CancelBookingCommand command = new CancelBookingCommand(booking.bookingId(),
+                CancellationScope.ENTIRE_BOOKING, null, CancellationReason.CUSTOMER_REQUEST,
+                CancellationPolicyType.STANDARD);
+
+        service.cancel(command);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> service.cancel(command));
+        assertEquals("Booking is already cancelled", exception.getMessage());
+    }
+
+    @Test
+    void aggregatesRefundDecisionAcrossRecurringSeries() {
+        Booking booking = recurringBooking();
+        BookingService bookingService = mock(BookingService.class);
+        when(bookingService.get(booking.bookingId())).thenReturn(booking);
+        CancellationService service = new CancellationService(bookingService, mock(PaymentService.class),
+                new CancellationPolicyRegistry(List.of(new SimpleCancellationPolicy())),
+                new InMemoryCancellationRepository());
+
+        Cancellation cancellation = service.cancel(new CancelBookingCommand(booking.bookingId(),
+                CancellationScope.ENTIRE_BOOKING, null, CancellationReason.CUSTOMER_REQUEST,
+                CancellationPolicyType.STANDARD));
+
+        assertTrue(cancellation.refundDecision().refundable());
+        assertEquals(BigDecimal.valueOf(1000), cancellation.refundDecision().amount().amount());
+    }
+
+    @Test
     void keepsBookingActiveWhenRefundGatewayFails() {
         Booking booking = scheduledBooking();
         BookingService bookingService = mock(BookingService.class);
