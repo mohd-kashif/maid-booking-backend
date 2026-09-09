@@ -6,6 +6,7 @@ import com.rupeek.maidbooking.maid.domain.MaidRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -32,5 +33,10 @@ public class InMemoryMaidRepository implements MaidRepository {
     @Override
     public Optional<Maid> findById(MaidId id) {
         return Optional.ofNullable(maids.get(id));
+    }
+
+    @Override
+    public List<Maid> findAll() {
+        return List.copyOf(maids.values());
     }
 }

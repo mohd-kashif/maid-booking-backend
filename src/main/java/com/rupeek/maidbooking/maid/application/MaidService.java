@@ -5,6 +5,7 @@ import com.rupeek.maidbooking.maid.domain.Maid;
 import com.rupeek.maidbooking.maid.domain.MaidId;
 import com.rupeek.maidbooking.maid.domain.MaidRepository;
 import com.rupeek.maidbooking.maid.domain.ServiceOffering;
+import com.rupeek.maidbooking.maid.domain.Gender;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -23,6 +24,11 @@ public class MaidService {
     public Maid register(String name, String locality, List<ServiceOffering> serviceOfferings,
                          List<AvailabilityWindow> availabilityWindows) {
         return repository.save(Maid.register(name, locality, serviceOfferings, availabilityWindows));
+    }
+
+    public Maid register(String name, String locality, List<ServiceOffering> serviceOfferings,
+                         List<AvailabilityWindow> availabilityWindows, double rating, Gender gender) {
+        return repository.save(Maid.register(name, locality, serviceOfferings, availabilityWindows, rating, gender));
     }
 
     public Maid get(UUID maidId) {

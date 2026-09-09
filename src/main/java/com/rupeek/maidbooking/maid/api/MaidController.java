@@ -6,6 +6,7 @@ import com.rupeek.maidbooking.maid.domain.Maid;
 import com.rupeek.maidbooking.maid.domain.ServiceOffering;
 import com.rupeek.maidbooking.maid.domain.Price;
 import com.rupeek.maidbooking.maid.domain.ServiceType;
+import com.rupeek.maidbooking.maid.domain.Gender;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +35,8 @@ public class MaidController {
                         .map(offering -> new ServiceOffering(offering.type(),
                                 new Price(offering.price(), offering.currency())))
                         .toList(),
-                request.availability().stream().map(MaidController::toDomain).toList());
+                request.availability().stream().map(MaidController::toDomain).toList(),
+                request.rating() == null ? 0 : request.rating(), request.gender());
         return MaidResponse.from(maid);
     }
 
@@ -65,7 +67,9 @@ public class MaidController {
             @NotBlank String name,
             @NotBlank String locality,
             @NotEmpty List<@Valid ServiceOfferingRequest> services,
-            @NotEmpty List<@Valid AvailabilityRequest> availability) {}
+            @NotEmpty List<@Valid AvailabilityRequest> availability,
+            @DecimalMin("0.0") @DecimalMax("5.0") Double rating,
+            Gender gender) {}
 
     public record ServiceOfferingRequest(
             @NotNull ServiceType type,
@@ -80,7 +84,7 @@ public class MaidController {
     public record AvailabilityResponse(boolean available) {}
 
     public record MaidResponse(UUID id, String name, String locality, List<ServiceOfferingResponse> services,
-                               List<AvailabilityRequest> availability) {
+                               List<AvailabilityRequest> availability, double rating, Gender gender) {
         static MaidResponse from(Maid maid) {
             return new MaidResponse(maid.id().value(), maid.name(), maid.locality(),
                     maid.serviceOfferings().stream()
@@ -88,7 +92,7 @@ public class MaidController {
                                     offering.price().amount(), offering.price().currency()))
                             .toList(), maid.availabilityWindows().stream()
                             .map(window -> new AvailabilityRequest(window.dayOfWeek(), window.startTime(), window.endTime()))
-                            .toList());
+                            .toList(), maid.rating(), maid.gender());
         }
     }
 

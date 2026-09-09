@@ -6,6 +6,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import com.rupeek.maidbooking.booking.domain.TimeSlot;
+import com.rupeek.maidbooking.maid.domain.MaidId;
 
 @Repository
 public class InMemoryBookingRepository implements BookingRepository {
@@ -27,5 +29,13 @@ public class InMemoryBookingRepository implements BookingRepository {
     @Override
     public Optional<Booking> findById(BookingId id) {
         return Optional.ofNullable(bookings.get(id));
+    }
+
+    @Override
+    public boolean hasActiveOverlap(MaidId maidId, TimeSlot slot) {
+        return bookings.values().stream()
+                .filter(booking -> booking.maidId().equals(maidId) && booking.isActive())
+                .flatMap(booking -> booking.activeSlots().stream())
+                .anyMatch(slot::overlaps);
     }
 }

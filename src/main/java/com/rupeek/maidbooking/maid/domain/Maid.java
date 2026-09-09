@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 public final class Maid {
     private final MaidId id;
@@ -15,9 +16,12 @@ public final class Maid {
     private final List<ServiceOffering> serviceOfferings;
     private final MaidStatus status;
     private final List<AvailabilityWindow> availabilityWindows;
+    private final double rating;
+    private final Gender gender;
 
     private Maid(MaidId id, String name, String locality, List<ServiceOffering> serviceOfferings,
-                 MaidStatus status, List<AvailabilityWindow> availabilityWindows) {
+                 MaidStatus status, List<AvailabilityWindow> availabilityWindows,
+                 double rating, Gender gender) {
         this.id = Objects.requireNonNull(id);
         this.name = requireText(name, "Name");
         this.locality = requireText(locality, "Locality");
@@ -29,6 +33,11 @@ public final class Maid {
         validateSameCurrency(this.serviceOfferings);
         this.status = Objects.requireNonNull(status);
         this.availabilityWindows = List.copyOf(availabilityWindows);
+        if (rating < 0 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 0 and 5");
+        }
+        this.rating = rating;
+        this.gender = gender;
         validateNoOverlappingWindows(this.availabilityWindows);
     }
 
@@ -38,14 +47,23 @@ public final class Maid {
             throw new IllegalArgumentException("At least one availability window is required");
         }
         return new Maid(MaidId.generate(), name, locality, serviceOfferings, MaidStatus.ACTIVE,
-                availabilityWindows);
+                availabilityWindows, 0, null);
+    }
+
+    public static Maid register(String name, String locality, List<ServiceOffering> serviceOfferings,
+                                List<AvailabilityWindow> availabilityWindows, double rating, Gender gender) {
+        if (availabilityWindows == null || availabilityWindows.isEmpty()) {
+            throw new IllegalArgumentException("At least one availability window is required");
+        }
+        return new Maid(MaidId.generate(), name, locality, serviceOfferings, MaidStatus.ACTIVE,
+                availabilityWindows, rating, gender);
     }
 
     public Maid addAvailability(AvailabilityWindow window) {
         Objects.requireNonNull(window, "Availability window is required");
         var updated = new ArrayList<>(availabilityWindows);
         updated.add(window);
-        return new Maid(id, name, locality, serviceOfferings, status, updated);
+        return new Maid(id, name, locality, serviceOfferings, status, updated, rating, gender);
     }
 
     public Price calculatePrice(Set<ServiceType> requestedServices) {
@@ -113,4 +131,6 @@ public final class Maid {
     public List<ServiceOffering> serviceOfferings() { return serviceOfferings; }
     public MaidStatus status() { return status; }
     public List<AvailabilityWindow> availabilityWindows() { return availabilityWindows; }
+    public double rating() { return rating; }
+    public Gender gender() { return gender; }
 }

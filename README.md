@@ -155,3 +155,20 @@ The current policy provides a full refund when cancellation happens more than
 refund. The policy is behind [`CancellationPolicy`](src/main/java/com/rupeek/maidbooking/cancellation/application/CancellationPolicy.java)
 and selected through [`CancellationPolicyRegistry`](src/main/java/com/rupeek/maidbooking/cancellation/application/CancellationPolicyRegistry.java)
 so new policy implementations can be added without changing cancellation orchestration.
+
+## Maid discovery API
+
+Maid discovery is available through:
+
+```text
+GET /api/maids?locality=Indiranagar&services=CLEANING,COOKING&start=2026-09-15T10:00:00Z&end=2026-09-15T12:00:00Z&maxPrice=1200&minimumRating=4&gender=FEMALE
+```
+
+All query parameters are optional. When a time range is supplied, the result
+includes only active maids whose configured weekly availability contains the
+range and who have no overlapping active booking. Cancelled bookings and
+cancelled recurring occurrences do not block discovery.
+
+The search service composes [`MaidFilter`](src/main/java/com/rupeek/maidbooking/discovery/domain/MaidFilter.java)
+implementations, so a new filter can be added as a Spring component without
+changing the discovery orchestration.
