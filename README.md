@@ -18,22 +18,21 @@ The application starts on `http://localhost:8080`.
 
 ## Project structure
 
-The application uses a Maven build and is intentionally starting with a small,
-framework-ready foundation. Business code will be organised by responsibility
-under `com.rupeek.maidbooking`, keeping domain logic separate from REST and
-in-memory persistence adapters as the implementation grows.
+The application is organised by business responsibility under
+`com.rupeek.maidbooking`. Domain logic is kept separate from REST controllers,
+application services, and in-memory persistence adapters.
 
-## Current scope
+## Implemented modules
 
-This initial setup provides:
-
-- Java 17 and Spring Boot configuration
-- Web and Bean Validation dependencies for the REST layer
-- A smoke test that verifies the Spring application context loads
-- Maven and IDE build artifacts excluded from version control
-
-The next implementation step is the domain model for maids, services,
-availability windows, and bookings.
+- Maid onboarding with service offerings, pricing, gender, rating, and recurring availability.
+- Extensible maid discovery filters for locality, services, price, rating, gender, and availability.
+- Strategy-based instant, scheduled, and recurring bookings.
+- Per-service pricing and immutable booking/payment price snapshots.
+- Card, UPI, and wallet payments with idempotency support.
+- Cancellation policies, recurring occurrence cancellation, and refunds.
+- Consistent API error responses and OpenAPI documentation.
+- In-memory repositories with active-slot overlap protection and concurrency tests.
+- Unit and integration tests covering the main customer flow.
 
 ## Maid onboarding API
 
@@ -76,7 +75,6 @@ bookings:
 
 - `POST /api/bookings` creates a booking.
 - `GET /api/bookings/{bookingId}` retrieves a booking.
-- `POST /api/bookings/{bookingId}/cancel` cancels a booking and releases its slots.
 
 Example scheduled booking:
 

@@ -11,6 +11,11 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.List;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,6 +64,41 @@ class BookingTest {
         booking.cancel();
 
         assertThrows(IllegalStateException.class, booking::cancel);
+    }
+
+    @Test
+    void allowsOnlyOneConcurrentReservationForSameSlot() throws Exception {
+        var repository = new InMemoryBookingRepository();
+        OffsetDateTime start = nextMondayAt(10);
+        int attempts = 8;
+        var ready = new CountDownLatch(attempts);
+        var startGate = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(attempts);
+        Maid maid = maid();
+        try {
+            List<Future<Boolean>> results = new ArrayList<>();
+            for (int i = 0; i < attempts; i++) {
+                results.add(executor.submit(() -> {
+                    ready.countDown();
+                    startGate.await();
+                    try {
+                        repository.reserveAndSave(strategy.createBooking(maid, command(start)));
+                        return true;
+                    } catch (IllegalStateException exception) {
+                        return false;
+                    }
+                }));
+            }
+            ready.await();
+            startGate.countDown();
+
+            long successfulReservations = results.stream().filter(result -> {
+                try { return result.get(); } catch (Exception exception) { throw new RuntimeException(exception); }
+            }).count();
+            assertEquals(1, successfulReservations);
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     private static CreateBookingCommand command(OffsetDateTime start) {

@@ -30,12 +30,6 @@ public class BookingService {
                 .orElseThrow(() -> new BookingNotFoundException(bookingId));
     }
 
-    public Booking cancel(UUID bookingId) {
-        Booking booking = get(bookingId);
-        booking.cancel();
-        return booking;
-    }
-
     public static class BookingNotFoundException extends RuntimeException {
         public BookingNotFoundException(UUID bookingId) {
             super("Booking not found: " + bookingId);

@@ -43,11 +43,6 @@ public class BookingController {
         return BookingResponse.from(service.get(bookingId));
     }
 
-    @PostMapping("/{bookingId}/cancel")
-    public BookingResponse cancel(@PathVariable UUID bookingId) {
-        return BookingResponse.from(service.cancel(bookingId));
-    }
-
     public record CreateBookingRequest(
             @NotBlank String customerId,
             @NotNull UUID maidId,
