@@ -95,3 +95,28 @@ Booking creation resolves a [`BookingStrategy`](src/main/java/com/rupeek/maidboo
 from a registry, so adding a new booking type does not require branching changes
 inside the application service. The in-memory repository performs synchronized
 slot reservation to prevent overlapping active bookings for the same maid.
+
+## Payment API
+
+The payment module supports strategy-based card, UPI, and wallet payments:
+
+- `POST /api/payments` makes a payment for a confirmed booking.
+- `GET /api/payments/{paymentId}` retrieves payment status and transaction details.
+
+Example request:
+
+```json
+{
+  "bookingId": "booking-uuid",
+  "method": "UPI",
+  "idempotencyKey": "customer-1-booking-uuid-v1",
+  "paymentDetails": "customer@upi",
+  "occurrenceIndex": null
+}
+```
+
+Payment amount is copied from the booking price snapshot. Reusing the same
+idempotency key returns the original payment and does not charge the gateway
+again. The current gateway is a deterministic mock; sending `fail` as payment
+details simulates a gateway failure for local testing. Recurring bookings may
+provide a zero-based `occurrenceIndex` to pay each occurrence independently.
