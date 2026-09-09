@@ -213,3 +213,72 @@ the requests in this order:
 The collection stores the created maid, booking, and payment IDs in collection
 variables automatically. Its pre-request script calculates the next Monday
 booking slot dynamically.
+
+## Assumptions and trade-offs
+
+- Persistence is in memory and is hidden behind repository interfaces. Data is
+  lost when the application restarts; production persistence was intentionally
+  kept out of scope for the exercise.
+- Authentication and authorisation are not implemented, as they are explicitly
+  out of scope. `customerId` is treated as a trusted request value.
+- Maid availability is modelled as recurring weekly day/time windows. Booking
+  slots are checked against those windows and active reservations.
+- Instant bookings use a one-hour slot beginning at the current server time.
+- Recurring bookings are bounded by the supplied recurrence end date and use a
+  weekly recurrence rule.
+- Each maid has one price per offered service, and all offerings for that maid
+  use the same currency. Selected service prices are added to produce the
+  booking price snapshot.
+- Booking and payment price snapshots are immutable for the lifetime of the
+  booking or payment. Later maid price changes do not alter existing records.
+- One successful payment is allowed per booking occurrence. Failed payments can
+  be retried with a new idempotency key.
+- The payment and refund provider is mocked. Sending `fail` as payment details
+  is only a local test mechanism and does not represent a real gateway.
+- The standard cancellation policy provides a full refund more than 24 hours
+  before a slot and no refund within 24 hours. Policies are pluggable.
+- Cancellation of a recurring booking can target one occurrence or the whole
+  series. Cancelled occurrences no longer block discovery or new bookings.
+- Concurrency protection is implemented for the in-memory booking repository;
+  a production deployment would use database transactions or distributed
+  locking.
+
+## What I would do with more time
+
+The most valuable next feature would be dynamic pricing. I would introduce a
+pluggable pricing abstraction, for example [`PricingStrategy`](src/main/java/com/rupeek/maidbooking/pricing/PricingStrategy.java),
+so the booking flow could calculate prices from factors such as:
+
+- Peak and off-peak time windows.
+- Weekends and holidays.
+- Locality demand and maid availability.
+- Booking duration and selected service combinations.
+- Recurring-booking discounts.
+- Customer or promotional discounts.
+
+The calculated result would still be stored as the existing booking price
+snapshot, so later pricing changes would not affect an already-created booking.
+I would also add pricing policy selection through a registry, just as booking
+strategies, payment methods, discovery filters, and cancellation policies are
+currently extensible.
+
+Another important follow-up would be a dedicated customer/user module because
+the customer is a core participant in the application. It would provide:
+
+- Customer registration and profile management.
+- Contact details and saved addresses.
+- Customer preferences such as service, gender, and locality preferences.
+- Ownership checks for bookings, payments, and cancellations.
+- A proper identity reference instead of trusting the `customerId` supplied by
+  the request.
+- Authentication and authorisation boundaries for customer and maid actions.
+
+That module would be kept behind a user repository and service abstraction so
+authentication could initially remain simple while the application still has a
+proper customer domain model. Booking and payment flows would then validate
+customer ownership through that module.
+
+Other follow-up improvements would include durable database persistence,
+gateway webhooks and reconciliation, partial refunds, richer recurring
+scheduling rules, metrics and tracing, and load testing of the reservation
+path.
