@@ -48,7 +48,7 @@ public class CancellationService {
 
     private Cancellation cancelOccurrencePayment(Booking booking, CancelBookingCommand command,
                                                 CancellationPolicy policy) {
-        int index = requiredOccurrence(command);
+        int index = requiredOccurrence(command, booking);
         RefundDecision decision = policy.evaluate(booking, index, OffsetDateTime.now());
         if (decision.refundable()) {
             paymentService.refundIfPresent(booking.bookingId(), index);
@@ -64,9 +64,14 @@ public class CancellationService {
         }
     }
 
-    private static int requiredOccurrence(CancelBookingCommand command) {
+    private static int requiredOccurrence(CancelBookingCommand command, Booking booking) {
         if (command.occurrenceIndex() == null) {
             throw new IllegalArgumentException("Occurrence index is required");
+        }
+        if (booking.type() != com.rupeek.maidbooking.booking.domain.BookingType.RECURRING
+                || command.occurrenceIndex() < 0
+                || command.occurrenceIndex() >= booking.slots().size()) {
+            throw new IllegalArgumentException("Invalid booking occurrence");
         }
         return command.occurrenceIndex();
     }

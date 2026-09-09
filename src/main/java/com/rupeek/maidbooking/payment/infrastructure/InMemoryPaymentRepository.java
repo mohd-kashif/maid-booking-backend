@@ -39,4 +39,21 @@ public class InMemoryPaymentRepository implements PaymentRepository {
                         && java.util.Objects.equals(payment.occurrenceIndex(), occurrenceIndex))
                 .findFirst();
     }
+
+    @Override
+    public boolean existsSuccessfulPayment(java.util.UUID bookingId, Integer occurrenceIndex) {
+        return payments.values().stream()
+                .anyMatch(payment -> payment.bookingId().equals(bookingId)
+                        && java.util.Objects.equals(payment.occurrenceIndex(), occurrenceIndex)
+                        && payment.status() == PaymentStatus.SUCCESS);
+    }
+
+    @Override
+    public Optional<Payment> findSuccessfulByBookingAndOccurrence(java.util.UUID bookingId, Integer occurrenceIndex) {
+        return payments.values().stream()
+                .filter(payment -> payment.bookingId().equals(bookingId)
+                        && java.util.Objects.equals(payment.occurrenceIndex(), occurrenceIndex)
+                        && payment.status() == PaymentStatus.SUCCESS)
+                .findFirst();
+    }
 }

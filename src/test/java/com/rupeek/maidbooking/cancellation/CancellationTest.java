@@ -77,6 +77,20 @@ class CancellationTest {
     }
 
     @Test
+    void rejectsOutOfRangeOccurrenceAsBadInput() {
+        Booking booking = recurringBooking();
+        BookingService bookingService = mock(BookingService.class);
+        when(bookingService.get(booking.bookingId())).thenReturn(booking);
+        CancellationService service = new CancellationService(bookingService, mock(PaymentService.class),
+                new CancellationPolicyRegistry(List.of(new SimpleCancellationPolicy())),
+                new InMemoryCancellationRepository());
+
+        assertThrows(IllegalArgumentException.class, () -> service.cancel(new CancelBookingCommand(
+                booking.bookingId(), CancellationScope.SINGLE_OCCURRENCE, 99,
+                CancellationReason.CUSTOMER_REQUEST, CancellationPolicyType.STANDARD)));
+    }
+
+    @Test
     void keepsBookingActiveWhenRefundGatewayFails() {
         Booking booking = scheduledBooking();
         BookingService bookingService = mock(BookingService.class);

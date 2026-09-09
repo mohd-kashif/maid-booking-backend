@@ -32,12 +32,17 @@ public class PaymentService {
             return existing;
         }
 
+        if (paymentRepository.existsSuccessfulPayment(command.bookingId(), command.occurrenceIndex())) {
+            throw new IllegalStateException("A payment already exists for this booking occurrence");
+        }
+
         Booking booking = bookingService.get(command.bookingId());
         if (!booking.isActive()) {
             throw new IllegalStateException("Cannot pay for a cancelled booking");
         }
         if (command.occurrenceIndex() != null
                 && (booking.type() != com.rupeek.maidbooking.booking.domain.BookingType.RECURRING
+                || command.occurrenceIndex() < 0
                 || command.occurrenceIndex() >= booking.slots().size())) {
             throw new IllegalArgumentException("Invalid recurring booking occurrence");
         }
@@ -53,7 +58,7 @@ public class PaymentService {
     }
 
     public Payment refund(UUID bookingId, Integer occurrenceIndex) {
-        Payment payment = paymentRepository.findByBookingAndOccurrence(bookingId, occurrenceIndex)
+        Payment payment = paymentRepository.findSuccessfulByBookingAndOccurrence(bookingId, occurrenceIndex)
                 .orElseThrow(() -> new IllegalStateException("No payment found for cancellation scope"));
         var result = refundGateway.refund(payment.transactionReference(), payment.amountSnapshot());
         if (!result.successful()) {
@@ -64,7 +69,7 @@ public class PaymentService {
     }
 
     public Payment refundIfPresent(UUID bookingId, Integer occurrenceIndex) {
-        return paymentRepository.findByBookingAndOccurrence(bookingId, occurrenceIndex)
+        return paymentRepository.findSuccessfulByBookingAndOccurrence(bookingId, occurrenceIndex)
                 .map(payment -> refund(bookingId, occurrenceIndex))
                 .orElse(null);
     }

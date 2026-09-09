@@ -79,6 +79,52 @@ class PaymentTest {
                 secondBooking.bookingId(), PaymentMethodType.CARD, key, "card", null)));
     }
 
+    @Test
+    void rejectsSecondPaymentForSameBookingOccurrence() {
+        Booking booking = booking();
+        BookingService bookingService = mock(BookingService.class);
+        when(bookingService.get(booking.bookingId())).thenReturn(booking);
+        PaymentService paymentService = service(bookingService);
+
+        paymentService.makePayment(new MakePaymentCommand(booking.bookingId(),
+                PaymentMethodType.CARD, "first-key", "card", null));
+
+        assertThrows(IllegalStateException.class, () -> paymentService.makePayment(new MakePaymentCommand(
+                booking.bookingId(), PaymentMethodType.UPI, "second-key", "upi", null)));
+    }
+
+    @Test
+    void rejectsOutOfRangeRecurringOccurrence() {
+        Booking booking = Booking.create("customer-1", new MaidId(UUID.randomUUID()), BookingType.RECURRING,
+                Set.of(ServiceType.CLEANING), new Price(BigDecimal.valueOf(1000), "INR"),
+                List.of(new TimeSlot(OffsetDateTime.now(ZoneOffset.UTC),
+                        OffsetDateTime.now(ZoneOffset.UTC).plusHours(1))));
+        BookingService bookingService = mock(BookingService.class);
+        when(bookingService.get(booking.bookingId())).thenReturn(booking);
+
+        assertThrows(IllegalArgumentException.class, () -> service(bookingService).makePayment(
+                new MakePaymentCommand(booking.bookingId(), PaymentMethodType.CARD,
+                        "out-of-range", "card", 1)));
+    }
+
+    @Test
+    void allowsRetryAfterFailedPaymentForSameOccurrence() {
+        Booking booking = booking();
+        BookingService bookingService = mock(BookingService.class);
+        when(bookingService.get(booking.bookingId())).thenReturn(booking);
+        PaymentService paymentService = service(bookingService);
+
+        Payment failed = paymentService.makePayment(new MakePaymentCommand(booking.bookingId(),
+                PaymentMethodType.CARD, "failed-key", "fail", null));
+        Payment retry = paymentService.makePayment(new MakePaymentCommand(booking.bookingId(),
+                PaymentMethodType.CARD, "retry-key", "card", null));
+
+        assertEquals(PaymentStatus.FAILED, failed.status());
+        assertEquals(PaymentStatus.SUCCESS, retry.status());
+        assertThrows(IllegalStateException.class, () -> paymentService.makePayment(new MakePaymentCommand(
+                booking.bookingId(), PaymentMethodType.CARD, "third-key", "card", null)));
+    }
+
     private static PaymentService service(BookingService bookingService) {
         var gateway = new MockPaymentProvider();
         var registry = new PaymentMethodRegistry(List.of(
