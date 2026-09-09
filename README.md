@@ -198,3 +198,20 @@ All validation and domain errors use a consistent response shape:
 The complete API flow is covered by [`ApiFlowIntegrationTest.java`](src/test/java/com/rupeek/maidbooking/ApiFlowIntegrationTest.java):
 register a maid, discover her, create a booking, pay, verify the slot is hidden,
 cancel the booking, verify the refund, and verify the maid is discoverable again.
+
+## Postman collection
+
+Import [`maid-booking.postman_collection.json`](postman/maid-booking.postman_collection.json)
+from the `postman` directory into Postman. Start the application first, then run
+the requests in this order:
+
+1. `Maid / Register Maid`
+2. `Discovery / Search Maids`
+3. `Booking / Create Scheduled Booking`
+4. `Payment / Pay With UPI`
+5. `Cancellation / Cancel Booking`
+6. `Cancellation / Search After Cancellation`
+
+The collection stores the created maid, booking, and payment IDs in collection
+variables automatically. Its pre-request script calculates the next Monday
+booking slot dynamically.

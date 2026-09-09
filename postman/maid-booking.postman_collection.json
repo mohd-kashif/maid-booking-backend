@@ -1,0 +1,175 @@
+{
+  "info": {
+    "_postman_id": "6a13bf31-3fd0-4a1f-a6fb-maid-booking",
+    "name": "Maid Booking Backend",
+    "description": "Postman collection for maid onboarding, discovery, booking, payment, and cancellation flows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "maidId", "value": "" },
+    { "key": "bookingId", "value": "" },
+    { "key": "paymentId", "value": "" },
+    { "key": "scheduledStart", "value": "" },
+    { "key": "scheduledEnd", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Maid",
+      "item": [
+        {
+          "name": "Register Maid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Maid created', function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set('maidId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Asha\",\n  \"locality\": \"Indiranagar\",\n  \"services\": [\n    { \"type\": \"CLEANING\", \"price\": 400, \"currency\": \"INR\" },\n    { \"type\": \"COOKING\", \"price\": 600, \"currency\": \"INR\" }\n  ],\n  \"availability\": [\n    { \"dayOfWeek\": \"MONDAY\", \"startTime\": \"09:00\", \"endTime\": \"18:00\" }\n  ],\n  \"rating\": 4.5,\n  \"gender\": \"FEMALE\"\n}"
+            },
+            "url": "{{baseUrl}}/api/maids"
+          }
+        },
+        {
+          "name": "Get Maid",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/maids/{{maidId}}" }
+        },
+        {
+          "name": "Add Availability",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"dayOfWeek\": \"TUESDAY\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"18:00\"\n}" },
+            "url": "{{baseUrl}}/api/maids/{{maidId}}/availability"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Discovery",
+      "item": [
+        {
+          "name": "Search Maids",
+          "event": [{
+            "listen": "prerequest",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const nextMonday = new Date();",
+                "const daysUntilMonday = (8 - nextMonday.getUTCDay()) % 7 || 7;",
+                "nextMonday.setUTCDate(nextMonday.getUTCDate() + daysUntilMonday);",
+                "nextMonday.setUTCHours(10, 0, 0, 0);",
+                "const end = new Date(nextMonday.getTime() + 60 * 60 * 1000);",
+                "pm.collectionVariables.set('scheduledStart', nextMonday.toISOString());",
+                "pm.collectionVariables.set('scheduledEnd', end.toISOString());"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/maids?locality=Indiranagar&services=CLEANING&start={{scheduledStart}}&end={{scheduledEnd}}&maxPrice=500&minimumRating=4&gender=FEMALE"
+          }
+        },
+        {
+          "name": "Check Availability",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/maids/{{maidId}}/availability?day=MONDAY&start=10:00&end=12:00"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Booking",
+      "item": [
+        {
+          "name": "Create Scheduled Booking",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Booking created', function () { pm.response.to.have.status(201); });",
+                "pm.collectionVariables.set('bookingId', pm.response.json().id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"customerId\": \"customer-1\",\n  \"maidId\": \"{{maidId}}\",\n  \"type\": \"SCHEDULED\",\n  \"services\": [\"CLEANING\"],\n  \"start\": \"{{scheduledStart}}\",\n  \"end\": \"{{scheduledEnd}}\"\n}" },
+            "url": "{{baseUrl}}/api/bookings"
+          }
+        },
+        {
+          "name": "Get Booking",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/bookings/{{bookingId}}" }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "Pay With UPI",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Payment succeeded', function () { pm.response.to.have.status(201); });",
+                "pm.collectionVariables.set('paymentId', pm.response.json().id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"bookingId\": \"{{bookingId}}\",\n  \"method\": \"UPI\",\n  \"idempotencyKey\": \"customer-1-{{bookingId}}-v1\",\n  \"paymentDetails\": \"customer@upi\"\n}" },
+            "url": "{{baseUrl}}/api/payments"
+          }
+        },
+        {
+          "name": "Get Payment",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/payments/{{paymentId}}" }
+        }
+      ]
+    },
+    {
+      "name": "Cancellation",
+      "item": [
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"scope\": \"ENTIRE_BOOKING\",\n  \"reason\": \"CUSTOMER_REQUEST\",\n  \"policyType\": \"STANDARD\"\n}" },
+            "url": "{{baseUrl}}/api/bookings/{{bookingId}}/cancellations"
+          }
+        },
+        {
+          "name": "Search After Cancellation",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/maids?services=CLEANING&start={{scheduledStart}}&end={{scheduledEnd}}" }
+        }
+      ]
+    },
+    {
+      "name": "API Documentation",
+      "item": [
+        { "name": "Swagger UI", "request": { "method": "GET", "url": "{{baseUrl}}/swagger-ui.html" } },
+        { "name": "OpenAPI JSON", "request": { "method": "GET", "url": "{{baseUrl}}/v3/api-docs" } }
+      ]
+    }
+  ]
+}
