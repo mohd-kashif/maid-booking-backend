@@ -172,3 +172,29 @@ cancelled recurring occurrences do not block discovery.
 The search service composes [`MaidFilter`](src/main/java/com/rupeek/maidbooking/discovery/domain/MaidFilter.java)
 implementations, so a new filter can be added as a Spring component without
 changing the discovery orchestration.
+
+## API documentation and errors
+
+OpenAPI documentation is available when the service is running:
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+All validation and domain errors use a consistent response shape:
+
+```json
+{
+  "timestamp": "2026-09-09T12:00:00Z",
+  "status": 400,
+  "code": "VALIDATION_ERROR",
+  "message": "Request validation failed",
+  "fieldErrors": {
+    "services": "must not be empty"
+  },
+  "path": "/api/bookings"
+}
+```
+
+The complete API flow is covered by [`ApiFlowIntegrationTest.java`](src/test/java/com/rupeek/maidbooking/ApiFlowIntegrationTest.java):
+register a maid, discover her, create a booking, pay, verify the slot is hidden,
+cancel the booking, verify the refund, and verify the maid is discoverable again.
