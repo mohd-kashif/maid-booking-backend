@@ -62,6 +62,23 @@ class PaymentTest {
         assertEquals(PaymentStatus.FAILED, payment.status());
     }
 
+    @Test
+    void rejectsIdempotencyKeyReuseForDifferentBooking() {
+        Booking firstBooking = booking();
+        Booking secondBooking = booking();
+        BookingService bookingService = mock(BookingService.class);
+        when(bookingService.get(firstBooking.bookingId())).thenReturn(firstBooking);
+        when(bookingService.get(secondBooking.bookingId())).thenReturn(secondBooking);
+        PaymentService paymentService = service(bookingService);
+        String key = "shared-key";
+
+        paymentService.makePayment(new MakePaymentCommand(firstBooking.bookingId(),
+                PaymentMethodType.CARD, key, "card", null));
+
+        assertThrows(IllegalStateException.class, () -> paymentService.makePayment(new MakePaymentCommand(
+                secondBooking.bookingId(), PaymentMethodType.CARD, key, "card", null)));
+    }
+
     private static PaymentService service(BookingService bookingService) {
         var gateway = new MockPaymentProvider();
         var registry = new PaymentMethodRegistry(List.of(

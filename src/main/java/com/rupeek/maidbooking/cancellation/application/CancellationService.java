@@ -28,7 +28,6 @@ public class CancellationService {
         Booking booking = bookingService.get(command.bookingId());
         CancellationPolicy policy = policyRegistry.get(command.policyType());
         if (command.scope() == CancellationScope.SINGLE_OCCURRENCE) {
-            booking.cancelOccurrence(requiredOccurrence(command));
             return repository.save(cancelOccurrencePayment(booking, command, policy));
         }
 
@@ -54,6 +53,7 @@ public class CancellationService {
         if (decision.refundable()) {
             paymentService.refundIfPresent(booking.bookingId(), index);
         }
+        booking.cancelOccurrence(index);
         return Cancellation.completed(booking.bookingId(), command.scope(), index, command.reason(), decision);
     }
 
